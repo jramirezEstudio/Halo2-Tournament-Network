@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:#f1f5f9;color:#1e293b;padding:12px;
+}
+
+/* ── Wrapper principal ──────────────────────── */
+.app-box{
+  background:#f8fafc;
+  border:1.5px solid #e2e8f0;
+  border-radius:14px;
+  overflow:hidden;
+}
+
+/* ── Barra de acciones ──────────────────────── */
+.action-bar{
+  display:flex;gap:8px;align-items:center;
+  padding:10px 14px;
+  background:#ffffff;
+  border-bottom:1.5px solid #e2e8f0;
+}
+.action-bar .title{
+  font-size:0.82rem;font-weight:800;color:#334155;
+  flex:1;letter-spacing:0.02em;
+}
+.btn{
+  font-size:0.78rem;font-weight:700;
+  padding:6px 14px;border-radius:7px;
+  border:1.5px solid;cursor:pointer;
+  transition:background .12s,transform .1s;
+  white-space:nowrap;
+}
+.btn:hover{transform:translateY(-1px);}
+.btn-fill{background:#f0fdf4;border-color:#86efac;color:#15803d;}
+.btn-fill:hover{background:#dcfce7;}
+.btn-clear{background:#fef2f2;border-color:#fca5a5;color:#b91c1c;}
+.btn-clear:hover{background:#fee2e2;}
+
+/* ── Inner padding sections ─────────────────── */
+.section{padding:12px 14px;}
+.section-label{
+  font-size:0.68rem;font-weight:800;letter-spacing:0.09em;
+  text-transform:uppercase;color:#94a3b8;margin-bottom:10px;
+}
+hr.sep{border:none;border-top:1.5px solid #e2e8f0;margin:0;}
+
+/* ── Pool / Bolsas ──────────────────────────── */
+.pools-row{display:flex;gap:10px;flex-wrap:wrap;}
+.pool-box{
+  flex:1;min-width:140px;
+  background:#ffffff;
+  border:1.5px solid #e2e8f0;
+  border-top:4px solid;
+  border-radius:10px;padding:10px;
+  transition:background .15s,border-color .15s;
+}
+.pool-box.drag-over{background:#eff6ff !important;border-bottom-color:#3b82f6 !important;border-left-color:#3b82f6 !important;border-right-color:#3b82f6 !important;}
+.pool-title{
+  font-size:0.68rem;font-weight:800;letter-spacing:0.06em;
+  text-transform:uppercase;margin-bottom:8px;
+}
+.pool-empty{
+  font-size:0.72rem;color:#cbd5e1;
+  border:2px dashed #e2e8f0;border-radius:8px;
+  text-align:center;padding:12px 0;
+}
+
+/* ── Player row ─────────────────────────────── */
+.player-row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:9px;margin-bottom:4px;
+  cursor:grab;user-select:none;
+  background:#f8fafc;border:1.5px solid #e2e8f0;
+  transition:background .1s,transform .1s,box-shadow .1s,opacity .1s;
+}
+.player-row:last-child{margin-bottom:0;}
+.player-row:hover{background:#fff;transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+.player-row.dragging{opacity:.3;cursor:grabbing;transform:none;box-shadow:none;}
+.player-row.drop-target{background:#dbeafe !important;border-color:#3b82f6 !important;transform:scale(1.01);}
+
+.rank-badge{font-size:0.72rem;font-weight:800;padding:2px 8px;border-radius:5px;color:#fff;white-space:nowrap;flex-shrink:0;}
+.pname{font-size:0.93rem;font-weight:700;color:#0f172a;flex:1;line-height:1.2;}
+.right-col{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+.mmr-badge{font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:5px;white-space:nowrap;}
+.pr-text{font-size:0.63rem;font-weight:600;color:#94a3b8;}
+
+/* ── Team cards ─────────────────────────────── */
+.teams-grid{display:flex;flex-wrap:wrap;gap:10px;}
+.team-card{
+  flex:1;min-width:160px;max-width:calc(25% - 8px);
+  background:#ffffff;border-radius:10px;
+  border:1.5px solid #e2e8f0;border-top:4px solid;
+  overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);
+  transition:box-shadow .15s,background .15s;
+}
+.team-card.drag-over{box-shadow:0 0 0 3px #3b82f666;background:#eff6ff;}
+.team-card-header{padding:9px 12px 6px;border-bottom:1px solid #f1f5f9;}
+.team-title{font-size:0.7rem;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px;}
+.team-meta{font-size:0.67rem;color:#94a3b8;}
+.cap-zone{padding:7px 10px 6px;background:#fffbeb;border-bottom:1px solid #fde68a;}
+.cap-label{font-size:0.58rem;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;color:#92400e;margin-bottom:4px;}
+.cap-zone .player-row{background:#fff7ed;border-color:#fed7aa;}
+.cap-zone .player-row:hover{background:#ffedd5;}
+.cap-empty{font-size:0.73rem;color:#d1d5db;font-style:italic;padding:7px 2px;border:2px dashed #fde68a;border-radius:8px;text-align:center;}
+.roster-zone{padding:7px 10px;min-height:36px;}
+.roster-empty{font-size:0.71rem;color:#cbd5e1;border:2px dashed #e2e8f0;border-radius:8px;text-align:center;padding:12px 0;}
+.card-footer{padding:5px 12px 8px;font-size:0.72rem;font-weight:700;border-top:1px solid #f1f5f9;}
+
+/* ── Balance section ────────────────────────── */
+.balance-grid{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;}
+.bal-card{
+  flex:1;min-width:100px;
+  background:#ffffff;
+  border-radius:10px;border:1.5px solid #e2e8f0;border-top:4px solid;
+  padding:10px 12px;text-align:center;
+}
+.bal-team-label{font-size:0.66rem;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:5px;}
+.bal-mmr{font-size:1.25rem;font-weight:800;margin-bottom:2px;}
+.bal-delta{font-size:0.67rem;color:#94a3b8;margin-bottom:2px;}
+.bal-pr{font-size:0.69rem;color:#64748b;margin-bottom:3px;}
+.bal-count{font-size:0.72rem;font-weight:700;}
+
+.alert{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:9px 12px;border-radius:9px;
+  font-size:0.78rem;font-weight:600;
+  border:1.5px solid;margin-top:8px;
+}
+.alert-warn{background:#fffbeb;border-color:#fde68a;color:#92400e;}
+.alert-ok{background:#f0fdf4;border-color:#86efac;color:#15803d;}
+.alert-info{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;}
+
+/* ── Launch button ──────────────────────────── */
+.launch-bar{padding:12px 14px;border-top:1.5px solid #e2e8f0;background:#ffffff;}
+.btn-launch{
+  width:100%;font-size:0.88rem;font-weight:800;
+  padding:10px 18px;border-radius:9px;
+  border:2px solid;cursor:pointer;
+  transition:background .12s,transform .1s,box-shadow .1s;
+  letter-spacing:0.02em;
+}
+.btn-launch:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.12);}
+.btn-launch-ok{background:#16a34a;border-color:#15803d;color:#ffffff;}
+.btn-launch-ok:hover{background:#15803d;}
+.btn-launch-warn{background:#d97706;border-color:#b45309;color:#ffffff;}
+.btn-launch-warn:hover{background:#b45309;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ── Streamlit bridge ──────────────────────────────────── */
+function sendToSt(type,data){window.parent.postMessage(Object.assign({isStreamlitMessage:true,type},data),"*");}
+const Streamlit={
+  setComponentReady(){sendToSt("streamlit:componentReady",{apiVersion:1});},
+  setFrameHeight(h){sendToSt("streamlit:setFrameHeight",{height:h});},
+  setComponentValue(v){sendToSt("streamlit:setComponentValue",{value:v});},
+  RENDER_EVENT:"streamlit:render",
+  events:{addEventListener(t,cb){window.addEventListener("message",e=>{if(e.data.type===t)cb(e);});}}
+};
+
+/* ── State ─────────────────────────────────────────────── */
+let S={pools:[],teams:[],pdata:{},cfg:{}};
+let drag={player:null,src:null,srcPool:-1,srcTeam:-1};
+
+/* ── Colors ────────────────────────────────────────────── */
+const RBG={"D":"#475569","D+":"#57534e","C":"#059669","C+":"#047857","B":"#2563eb","B+":"#1d4ed8","A":"#7c3aed","A+":"#6d28d9","S":"#d97706","S+":"#b45309","S++":"#dc2626","S+++":"#b91c1c"};
+const MBG={"D":"#e2e8f0","D+":"#e7e5e4","C":"#d1fae5","C+":"#a7f3d0","B":"#dbeafe","B+":"#bfdbfe","A":"#ede9fe","A+":"#ddd6fe","S":"#fef3c7","S+":"#fde68a","S++":"#fee2e2","S+++":"#fecaca"};
+const MTX={"D":"#1e293b","D+":"#1c1917","C":"#064e3b","C+":"#022c22","B":"#1e3a8a","B+":"#172554","A":"#3b0764","A+":"#2e1065","S":"#78350f","S+":"#451a03","S++":"#7f1d1d","S+++":"#450a0a"};
+const TC=["#3b82f6","#10b981","#f59e0b","#8b5cf6","#ef4444","#06b6d4","#f43f5e","#84cc16"];
+const rb=r=>RBG[r]||"#64748b",mb=r=>MBG[r]||"#e2e8f0",mt=r=>MTX[r]||"#1e293b",tc=i=>TC[i%TC.length];
+
+function getCap(players){
+  if(!players.length)return null;
+  return players.reduce((b,p)=>{
+    const d=S.pdata[p]||{},bd=S.pdata[b]||{};
+    return(d.mmr||0)>(bd.mmr||0)||((d.mmr||0)===(bd.mmr||0)&&(d.pr||0)>(bd.pr||0))?p:b;
+  },players[0]);
+}
+
+/* ── Balance helpers ───────────────────────────────────── */
+function calcBalance(){
+  const sums=S.teams.map(t=>t.reduce((s,p)=>s+(S.pdata[p]?.mmr||0),0));
+  const prs =S.teams.map(t=>t.length?Math.round(t.reduce((s,p)=>s+(S.pdata[p]?.pr||0),0)/t.length):0);
+  const avg =sums.length?sums.reduce((a,b)=>a+b,0)/sums.length:0;
+  const tol =S.cfg.balance_tolerance||0.75;
+  const maxDiff=sums.length>=2?Math.max(...sums)-Math.min(...sums):0;
+  return{sums,prs,avg,tol,maxDiff};
+}
+function findSwap(){
+  // greedy: find the pair swap that most reduces max-min diff
+  const sums=S.teams.map(t=>t.reduce((s,p)=>s+(S.pdata[p]?.mmr||0),0));
+  let best=null,bestGain=0;
+  for(let i=0;i<S.teams.length;i++)for(let j=i+1;j<S.teams.length;j++){
+    for(const pa of S.teams[i])for(const pb of S.teams[j]){
+      const ma=S.pdata[pa]?.mmr||0,mb2=S.pdata[pb]?.mmr||0;
+      const ni=sums[i]-ma+mb2,nj=sums[j]-mb2+ma;
+      const oldD=Math.abs(sums[i]-sums[j]),newD=Math.abs(ni-nj);
+      if(oldD-newD>bestGain){bestGain=oldD-newD;best={pa,pi:i,pb,pj:j};}
+    }
+  }
+  return best;
+}
+
+/* ── Player row ────────────────────────────────────────── */
+function pRow(pName,src,extra,teamIdx=-1){
+  const d=S.pdata[pName]||{},rk=d.rank||"?",mm=(d.mmr||0).toFixed(1),pr=d.pr||0;
+  const swH=teamIdx>=0?`ondragover="provr(event)" ondragleave="prlvr(event)" ondrop="dswap(event,'${pName}',${teamIdx})"`: "";
+  return`<div class="player-row" draggable="true" data-player="${pName}" data-src="${src}" ${extra}
+              ondragstart="ds(event)" ondragend="de(event)" ${swH}>
+           <span class="rank-badge" style="background:${rb(rk)};">${rk}</span>
+           <span class="pname">${pName}</span>
+           <div class="right-col">
+             <span class="mmr-badge" style="background:${mb(rk)};color:${mt(rk)};">${mm}</span>
+             <span class="pr-text">${pr} PR</span>
+           </div>
+         </div>`;
+}
+
+/* ── Render ────────────────────────────────────────────── */
+function render(){
+  const ppt=S.cfg.players_per_team||4;
+  const bal=calcBalance();
+  let h=`<div class="app-box">`;
+
+  /* Action bar */
+  h+=`<div class="action-bar">
+        <span class="title">📦 Draft por Bolsas</span>
+        <button class="btn btn-fill" onclick="doFill()">⚡ Llenar Automáticamente</button>
+        <button class="btn btn-clear" onclick="doClear()">🔄 Limpiar Equipos</button>
+      </div>`;
+
+  /* Bolsas */
+  h+=`<div class="section">
+        <div class="section-label">Bolsas de jugadores — arrastra hacia los equipos</div>
+        <div class="pools-row">`;
+  S.pools.forEach((pool,bi)=>{
+    const color=tc(bi);
+    h+=`<div class="pool-box" id="pool-${bi}" style="border-top-color:${color};"
+             ondragover="dov(event)" ondragleave="dlv(event)" ondrop="dpPool(event,${bi})">
+          <div class="pool-title" style="color:${color};">Bolsa ${bi+1}
+            <span style="font-weight:400;color:#94a3b8;font-size:0.65rem;">&nbsp;(${pool.length} jug.)</span>
+          </div>`;
+    h+=pool.length?pool.map(p=>pRow(p,"pool",`data-pool="${bi}"`)).join(""):`<div class="pool-empty">Pool vacío</div>`;
+    h+=`</div>`;
+  });
+  h+=`</div></div><hr class="sep">`;
+
+  /* Equipos */
+  h+=`<div class="section">
+        <div class="section-label">Equipos</div>
+        <div class="teams-grid">`;
+  S.teams.forEach((team,ti)=>{
+    const color=tc(ti),cap=getCap(team),roster=team.filter(p=>p!==cap);
+    const ms=team.reduce((s,p)=>s+(S.pdata[p]?.mmr||0),0);
+    const pa=team.length?Math.round(team.reduce((s,p)=>s+(S.pdata[p]?.pr||0),0)/team.length):0;
+    const full=team.length===ppt,fc=full?"#16a34a":"#d97706";
+    h+=`<div class="team-card" id="team-${ti}" style="border-top-color:${color};"
+             ondragover="dov(event)" ondragleave="dlv(event)" ondrop="dpTeam(event,${ti})">
+          <div class="team-card-header">
+            <div class="team-title" style="color:${color};">⚔️ Equipo ${ti+1}</div>
+            <div class="team-meta">&Sigma; ${ms.toFixed(1)} MMR &middot; PR prom ${pa}</div>
+          </div>
+          <div class="cap-zone">
+            <div class="cap-label">🚩 Capitán</div>
+            ${cap?pRow(cap,"team",`data-team="${ti}"`,ti):`<div class="cap-empty">Sin capitán</div>`}
+          </div>
+          <div class="roster-zone">
+            ${roster.length?roster.map(p=>pRow(p,"team",`data-team="${ti}"`,ti)).join(""):`<div class="roster-empty">Arrastra jugadores aquí</div>`}
+          </div>
+          <div class="card-footer" style="color:${fc};">${team.length} / ${ppt} jugadores</div>
+        </div>`;
+  });
+  h+=`</div></div><hr class="sep">`;
+
+  /* Balance */
+  h+=`<div class="section">
+        <div class="section-label">Balance en tiempo real</div>
+        <div class="balance-grid">`;
+  S.teams.forEach((team,ti)=>{
+    const color=tc(ti),ms=bal.sums[ti]||0,dev=Math.abs(ms-bal.avg);
+    const ppt2=ppt,full=team.length===ppt2,fc=full?"#16a34a":"#d97706";
+    const bc=dev<=bal.tol?"#16a34a":(dev<=bal.tol*2?"#d97706":"#dc2626");
+    h+=`<div class="bal-card" style="border-top-color:${color};">
+          <div class="bal-team-label" style="color:${color};">Equipo ${ti+1}</div>
+          <div class="bal-mmr" style="color:${bc};">&Sigma; ${ms.toFixed(1)}</div>
+          <div class="bal-delta" style="color:${bc};">&Delta; ${dev.toFixed(2)}</div>
+          <div class="bal-pr">PR prom: ${bal.prs[ti]||0}</div>
+          <div class="bal-count" style="color:${fc};">${team.length}/${ppt2}</div>
+        </div>`;
+  });
+  h+=`</div>`;
+
+  /* Status / swap */
+  if(S.teams.length>=2){
+    if(bal.maxDiff>bal.tol){
+      h+=`<div class="alert alert-warn">⚠️ Diferencia: <b>${bal.maxDiff.toFixed(2)} MMR</b> (umbral: ${bal.tol})</div>`;
+      const allFull=S.teams.every(t=>t.length===ppt);
+      if(allFull){
+        const sw=findSwap();
+        if(sw){
+          const ra=S.pdata[sw.pa]?.rank||"?",rb2=S.pdata[sw.pb]?.rank||"?";
+          h+=`<div class="alert alert-info">💡 <b>Swap sugerido:</b> <b>${sw.pa}</b> (${ra}) de Equipo ${sw.pi+1} ↔ <b>${sw.pb}</b> (${rb2}) de Equipo ${sw.pj+1}</div>`;
+        }
+      }
+    }else{
+      h+=`<div class="alert alert-ok">✅ Equipos balanceados — Diferencia: ${bal.maxDiff.toFixed(2)} MMR</div>`;
+    }
+  }
+  /* Launch button */
+  const isOk=bal.maxDiff<=bal.tol;
+  const lbCls=isOk?"btn-launch-ok":"btn-launch-warn";
+  const lbTxt=isOk?"🚀 Confirmar e Iniciar Torneo":"⚠️ Forzar Inicio (equipos desbalanceados)";
+  h+=`<div class="launch-bar"><button class="btn-launch ${lbCls}" onclick="doLaunch()">${lbTxt}</button></div>`;
+
+  h+=`</div></div>`;/* cierra app-box */
+
+  document.getElementById("app").innerHTML=h;
+  requestAnimationFrame(()=>Streamlit.setFrameHeight(document.body.scrollHeight+24));
+}
+
+/* ── Action buttons ────────────────────────────────────── */
+function doFill(){Streamlit.setComponentValue({action:"autofill"});}
+function doClear(){Streamlit.setComponentValue({action:"clear"});}
+function doLaunch(){Streamlit.setComponentValue({action:"launch"});}
+
+/* ── Drag handlers ─────────────────────────────────────── */
+function provr(e){e.preventDefault();e.stopPropagation();e.currentTarget.classList.add("drop-target");}
+function prlvr(e){e.currentTarget.classList.remove("drop-target");}
+
+function dswap(e,tgtP,tgtT){
+  e.preventDefault();e.stopPropagation();
+  e.currentTarget.classList.remove("drop-target");
+  const sp=drag.player;if(!sp||sp===tgtP)return;
+  if(drag.src==="team"&&drag.srcTeam>=0){
+    const si=S.teams[drag.srcTeam].indexOf(sp),ti2=S.teams[tgtT].indexOf(tgtP);
+    if(si>-1&&ti2>-1){S.teams[drag.srcTeam][si]=tgtP;S.teams[tgtT][ti2]=sp;}
+  }else if(drag.src==="pool"&&drag.srcPool>=0){
+    const ti2=S.teams[tgtT].indexOf(tgtP),pi=S.pools[drag.srcPool].indexOf(sp);
+    if(ti2>-1&&pi>-1){S.teams[tgtT][ti2]=sp;S.pools[drag.srcPool][pi]=tgtP;}
+  }
+  emit();render();
+}
+
+function ds(e){
+  const el=e.currentTarget;
+  drag={player:el.dataset.player,src:el.dataset.src,srcPool:parseInt(el.dataset.pool??-1),srcTeam:parseInt(el.dataset.team??-1)};
+  e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",drag.player);
+  setTimeout(()=>el.classList.add("dragging"),0);
+}
+function de(e){e.currentTarget.classList.remove("dragging");}
+function dov(e){e.preventDefault();e.currentTarget.classList.add("drag-over");}
+function dlv(e){e.currentTarget.classList.remove("drag-over");}
+
+function dpPool(e,pi){
+  e.preventDefault();e.stopPropagation();e.currentTarget.classList.remove("drag-over");
+  const pn=drag.player;if(!pn)return;
+  rem(pn);if(!S.pools[pi].includes(pn))S.pools[pi].push(pn);
+  emit();render();
+}
+function dpTeam(e,ti){
+  e.preventDefault();e.stopPropagation();e.currentTarget.classList.remove("drag-over");
+  const pn=drag.player;if(!pn)return;
+  const ppt=S.cfg.players_per_team||4;
+  if(S.teams[ti].length>=ppt||S.teams[ti].includes(pn))return;
+  rem(pn);S.teams[ti].push(pn);emit();render();
+}
+function rem(pn){
+  if(drag.src==="pool"&&drag.srcPool>=0){const i=S.pools[drag.srcPool].indexOf(pn);if(i>-1)S.pools[drag.srcPool].splice(i,1);}
+  else if(drag.src==="team"&&drag.srcTeam>=0){const i=S.teams[drag.srcTeam].indexOf(pn);if(i>-1)S.teams[drag.srcTeam].splice(i,1);}
+}
+function emit(){Streamlit.setComponentValue({pools:S.pools,teams:S.teams});}
+
+/* ── Props ─────────────────────────────────────────────── */
+Streamlit.events.addEventListener(Streamlit.RENDER_EVENT,e=>{
+  const a=e.data.args;
+  if(a.pools!==undefined)S.pools=JSON.parse(JSON.stringify(a.pools));
+  if(a.teams!==undefined)S.teams=JSON.parse(JSON.stringify(a.teams));
+  if(a.player_data!==undefined)S.pdata=a.player_data;
+  if(a.config!==undefined)S.cfg=a.config;
+  render();
+});
+Streamlit.setComponentReady();
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+Guía Técnica de Implementación: Sistema de Draft, Balanceo de Equipos y Sugerencias de IntercambioEsta especificación documenta la lógica de negocio, modelo matemático, algoritmos de optimización combinatoria y el motor de auditoría/sugerencias de balanceo para la fase de armado de equipos en torneos de cualquier modalidad competitiva (2v2, 3v3, 4v4, 5v5, 6v6, etc.).1. Mapeo de Rangos a Valores Numéricos (MMR)Para procesar el nivel de los jugadores en algoritmos numéricos, la escala de clasificaciones se transforma linealmente a puntos de MMR (Matchmaking Rating):RangoMMR BaseRangoMMR BaseD1.0B+3.5D+1.5A4.0C2.0A+4.5C+2.5S5.0B3.0S+5.5S++6.02. Variables Generales de ConfiguraciónEl sistema debe operar de forma dinámica según la modalidad elegida:$M$: Cantidad de jugadores por equipo (ej. $M = 2, 3, 4, 5, 6$).$T$: Cantidad total de equipos registrados.$N = M \times T$: Cantidad total de jugadores requeridos en el torneo.$\text{MMR}(p)$: Valor de MMR numérico del jugador $p$.Suma Objetivo por Equipo ($S_{\text{target}}$):$$S_{\text{target}} = \frac{\sum_{p=1}^{N} \text{MMR}(p)}{T}$$Promedio Objetivo por Jugador ($\mu_{\text{target}}$):$$\mu_{\text{target}} = \frac{S_{\text{target}}}{M}$$3. Métodos de Selección e Implementación AlgorítmicaMétodo 1: Balanceo Automático (Snake Draft Reestructurado)En lugar de un Snake Draft tradicional ciego por turnos, se utiliza un algoritmo de Partition Problem / Minimización de Varianza con capitanes prefijados.Definición de Capitanes: Se ordenan los $N$ jugadores por MMR descendentemente. Los primeros $T$ jugadores se asignan automáticamente como capitanes de los equipos $1, 2, \dots, T$.Optimización Combinatoria: Con el resto de los $N - T$ jugadores, el algoritmo prueba las combinaciones válidas de $M$ integrantes por equipo y selecciona la distribución que minimice la varianza de la suma total del equipo:$$\text{Minimizar } \sigma^2 = \frac{\sum_{i=1}^{T} (\text{SumaActual}_i - S_{\text{target}})^2}{T}$$Método 2: Elección Directa por CapitanesLos $T$ jugadores con mayor MMR son designados capitanes automáticamente.La selección de jugadores restantes se realiza manualmente a elección del capitán correspondiente.Al finalizar la selección de todos los jugadores, el equipo no se confirma inmediatamente, sino que se somete al Motor de Auditoría y Sugerencias (Sección 4).Método 3: Draft Aleatorio Restringido por Bolsas (Tiered Pool Draft)Garantiza un componente aleatorio sin romper el equilibrio competitivo entre equipos.Clasificación en $M$ Bolsas (Pools): Se ordenan los $N$ jugadores por MMR y se dividen en $M$ grupos iguales de tamaño $T$:Pool 1 (Capitanes / Tier 1): Los $T$ mejores jugadores.Pool 2 (Tier 2): Los siguientes $T$ jugadores.$\dots$Pool $M$ (Tier $M$): Los $T$ jugadores de menor rango.Sorteo Distribuido: Cada equipo recibe de manera aleatoria exactamente 1 jugador de cada Pool. Esto garantiza matemáticamente que ningún equipo quede compuesto únicamente por jugadores de rango alto o bajo.4. Motor de Auditoría, Alertas y Sugerencias de Intercambio (Min-Swap Algorithm)Cuando se utiliza la Elección por Capitanes, la distribución suele quedar desigual. Al intentar presionar "Confirmar e Iniciar Torneo", el sistema evalúa la equidad y genera recomendaciones si detecta desbalanceo.A. Criterio de ToleranciaSe calcula la desviación de la suma de MMR de cada equipo frente al objetivo:$$\text{Desviación}_i = \vert{}\text{SumaActual}_i - S_{\text{target}}\vert{}$$Estado Equilibrado (BALANCED): $\text{Desviación}_i \le 0.75$ en todos los equipos. Permite iniciar el torneo directamente.Estado Desbalanceado (NEEDS_BALANCING): Existe al menos un equipo con $\text{Desviación}_i > 0.75$. Se bloquea el inicio directo y se muestran sugerencias.B. Algoritmo de Sugerencia de Intercambios mínimos (Min-Swap)Identificar Extremos: Localiza el equipo con la suma de MMR más alta ($\text{Equipo}_{\text{max}}$) y el equipo con la suma más baja ($\text{Equipo}_{\text{min}}$).Calcular la Brecha ($\Delta$):$$\Delta = \text{Suma}(\text{Equipo}_{\text{max}}) - \text{Suma}(\text{Equipo}_{\text{min}})$$Búsqueda de Par de Intercambio:Busca un jugador $p_A \in \text{Equipo}_{\text{max}}$ y un jugador $p_B \in \text{Equipo}_{\text{min}}$ (excluyendo capitanes si la regla lo exige) cuya diferencia de MMR sea lo más cercana posible a la mitad de la brecha:$$\text{MMR}(p_A) - \text{MMR}(p_B) \approx \frac{\Delta}{2}$$Resultado en la Interfaz de Usuario: Presenta al administrador una sugerencia clara de intercambio:Alerta de Desbalanceo: El Equipo Alpha tiene una suma de MMR de 18.0 y el Equipo Charlie tiene 12.5 (Promedio ideal: 15.0).Sugerencia: Intercambiar a Jugador A (Rango A / MMR 4.0) de Equipo Alpha por Jugador B (Rango C+ / MMR 2.5) de Equipo Charlie. Esto ajustará las sumas a 16.5 y 14.0 respectivamente.5. Modelo de Datos Recomendado (JSON Schema)JSON{
+  "draft_id": "draft-uuid-1234",
+  "tournament_id": "tourn-uuid-5678",
+  "game_mode": "4v4",
+  "team_size": 4,
+  "team_count": 3,
+  "selection_method": "CAPTAIN_PICK",
+  "tolerance_threshold": 0.75,
+  "status": "NEEDS_BALANCING",
+  "metrics": {
+    "target_team_sum": 15.0,
+    "target_player_average": 3.75,
+    "current_variance": 1.42,
+    "is_balanced": false
+  },
+  "teams": [
+    {
+      "team_id": "team_1",
+      "name": "Equipo Alpha",
+      "captain_id": "p1",
+      "total_mmr": 18.0,
+      "average_mmr": 4.5,
+      "players": ["p1", "p4", "p7", "p10"]
+    },
+    {
+      "team_id": "team_2",
+      "name": "Equipo Bravo",
+      "captain_id": "p2",
+      "total_mmr": 14.5,
+      "average_mmr": 3.625,
+      "players": ["p2", "p5", "p8", "p11"]
+    },
+    {
+      "team_id": "team_3",
+      "name": "Equipo Charlie",
+      "captain_id": "p3",
+      "total_mmr": 12.5,
+      "average_mmr": 3.125,
+      "players": ["p3", "p6", "p9", "p12"]
+    }
+  ],
+  "suggested_swaps": [
+    {
+      "from_team_id": "team_1",
+      "to_team_id": "team_3",
+      "player_from_id": "p7",
+      "player_to_id": "p9",
+      "player_from_mmr": 4.0,
+      "player_to_mmr": 2.5,
+      "resulting_variance": 0.18,
+      "message": "Intercambiar a Jugador 7 (MMR 4.0) de Equipo Alpha por Jugador 9 (MMR 2.5) de Equipo Charlie optimizará el balance del torneo."
+    }
+  ]
+}

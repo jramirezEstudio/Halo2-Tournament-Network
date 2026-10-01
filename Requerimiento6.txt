@@ -1,0 +1,57 @@
+Hola, Claude. Tengo un proyecto en un solo archivo de código para gestionar torneos de Halo 2 y necesito ayuda para refactorizar y mejorar los módulos de armado de equipos (Elección por Capitanes y Draft Aleatorio por Bolsas) junto con la lógica de balanceo.
+
+Adjunto el archivo del proyecto para que apliques los siguientes cambios:
+
+1. Lógica de Jerarquía y Desempate: MMR + Puntos de Rango (PR)
+Actualmente, el ordenamiento y balanceo de los jugadores se realiza mediante el valor de MMR asignado a su rango (ej. 1.0, 1.5, 2.0 hasta 6.5, administrable desde el panel de control).
+
+Criterio de Desempate por PR: Cuando dos o más jugadores compartan el mismo MMR/Rango (por ejemplo, dos jugadores en Rango D con MMR 1.0), el sistema debe tomar como segundo criterio los Puntos de Rango (PR) (por ejemplo, un jugador D con 1,400 PR se posicionará por encima de un D con 1,060 PR).
+
+Aplicación General: Este criterio de ordenamiento (1° MMR, 2° PR) debe aplicarse en:
+
+La ordenación de la lista general de inscritos.
+
+La designación automática de capitanes (el de mayor MMR; si hay empate, el de mayor PR).
+
+El algoritmo de Snake Draft balanceado.
+
+La clasificación y distribución de jugadores en las bolsas del Draft Aleatorio.
+
+2. Módulo: Elección por Capitanes
+Gestión Flexible de Capitanes y Jugadores:
+
+Asignación automática inicial del capitán por el máximo nivel (MMR + PR).
+
+Permitir cambiar o reasignar al capitán antes de seleccionar alineaciones (pudiendo elegir a otro jugador de la lista general de inscritos o reasignarlo entre los integrantes ya elegidos dentro del equipo).
+
+Permitir intercambiar o mover jugadores entre los rosters creados (ej. Kripton, Avikon, Quiral, Akiti) antes de confirmar los equipos.
+
+Rediseño e Interfaz Visual:
+
+Darle un mejor estilo visual al módulo de selección de alineación por capitanes, utilizando una interfaz limpia, clara e intuitiva similar al diseño del Perfil de Jugador (tarjetas ordenadas, badges visuales e indicadores claros).
+
+Control Dinámico de Desbalances:
+
+Mostrar en tiempo real la suma total y promedio de MMR/PR de cada equipo durante la elección.
+
+Emitir alertas visuales si la diferencia entre el equipo más fuerte y el más débil supera un umbral tolerable y ofrecer sugerencias de rebalanceo óptimo.
+
+3. Módulo: Draft Aleatorio por Bolsas (Tier-based Draft)
+Gestión e Intercambio Manual entre Bolsas:
+
+Agrupar automáticamente a los jugadores en bolsas por jerarquía (MMR + PR).
+
+Permitir mover o transferir manualmente a un jugador de una bolsa a otra antes de ejecutar el sorteo.
+
+Sorteo Equitativo y Ajustes:
+
+Garantizar que el algoritmo aleatorio entregue a cada equipo una cantidad equivalente de jugadores por bolsa para equilibrar el nivel.
+
+Permitir realizar intercambios manuales entre jugadores de la misma bolsa o entre equipos después de generar el draft aleatorio y antes de oficializar el cuadro.
+
+Instrucciones Técnicas:
+Mantén los cambios integrados dentro de la estructura de código existente (~1,000 líneas).
+
+Asegúrate de que las modificaciones no rompan los flujos actuales de torneos ni la generación de brackets.
+
+Presenta las modificaciones o el código refactorizado con explicaciones claras sobre las funciones adaptadas.

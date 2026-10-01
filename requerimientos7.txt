@@ -1,0 +1,52 @@
+Actúa como un desarrollador Full Stack Senior experto en Python, Streamlit y diseño de interfaces de usuario (Drag and Drop, Layouts con Containers/Columns).
+
+Tengo un aplicativo de gestión de torneos de Halo 2 desarrollado en Python con Streamlit. Necesito realizar una reestructuración de la interfaz (UI) y del flujo de trabajo en el módulo de creación de torneos, específicamente dentro del "Draft por Bolsas".
+
+Antes de escribir o modificar código, por favor PÍDEME y analiza detenidamente los archivos o módulos de código actuales donde residen las funciones del draft, los estados (session_state), las bolsas y la asignación de equipos. No borres ni rompas la lógica existente, solo ajústala y reestructúrala.
+
+A continuación te detallo los cambios requeridos:
+
+---
+
+### 1. Unificación del Draft por Bolsas
+- Elimina la separación o paso independiente entre "Selección por Capitanes" y "Sorteo Automático". 
+- Deja una única pantalla/interfaz unificada para el "Draft por Bolsas".
+
+---
+
+### 2. Layout Unificado: Pool de Jugadores por Bolsas (Arriba)
+- Mantén intacta la lógica actual que clasifica y ordena a los jugadores por bolsas (Bolsa 1, 2, 3, etc., según sus rangos/estadísticas).
+- Muestra en la parte superior del layout todas las bolsas organizadas.
+- Presenta a los jugadores dentro de cada bolsa como elementos interactivos tipo "badges" visuales.
+- Integra/conserva la funcionalidad de Drag and Drop para que estos badges de jugadores puedan ser arrastrados desde su bolsa hacia las cards de los equipos.
+
+---
+
+### 3. Layout de Equipos en Cards (Abajo)
+- En la sección inferior de la pantalla, organiza los equipos mediante un grid/filas de Cards.
+- Muestra los equipos de forma horizontal con un máximo de 4 cards por fila.
+- Cada card de equipo actuará como zona de recepción (Dropzone) para los jugadores arrastrados desde las bolsas.
+
+---
+
+### 4. Gestión Interactiva del Capitán en la Card
+- Conserva la regla actual donde el capitán se asigna automáticamente al jugador con mejores estadísticas/rango de esa bolsa o equipo.
+- Muestra al capitán destacado en la parte superior de la card del equipo.
+- Permite que el capitán también sea arrastrable:
+  - Si se arrastra al capitán fuera de su lugar (de vuelta a las bolsas o a otra posición), la plaza de capitán debe quedar vacía/disponible ("Slot libre").
+
+---
+
+### 5. Botón de "Llenado / Sorteo Automático"
+- Elimina la vista o flujo independiente del sorteo automático.
+- Añade un botón directamente en la vista principal (al lado de los equipos o en la cabecera) denominado **"Sorteo Automático"** o **"Llenar Automáticamente"**.
+- Al presionar este botón, debe ejecutarse la lógica de distribución automática existente para enviar los jugadores restantes de las bolsas a los equipos en tiempo real sobre la misma pantalla.
+- El usuario debe poder seguir reajustando manualmente mediante Drag and Drop después de presionar dicho botón.
+
+---
+
+### Reglas de Implementación
+1. Reorganiza los elementos usando las capacidades de Streamlit (st.columns, st.container, componentes de Drag and Drop o bibliotecas auxiliares que se estén utilizando actualmente).
+3. Asegura que el manejo de estado (`st.session_state`) mantenga la persistencia de los jugadores en las bolsas y los equipos al realizar cualquier movimiento o presionar el botón de sorteo automático.
+4. Agrega mejoras visuales para que contraten los colores, no solo colcoar colores por colocarlos, tiene que ser visibles y que la letra interna sea visible ósea que contraste todo. 
+ 

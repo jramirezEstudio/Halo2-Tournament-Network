@@ -1,0 +1,46 @@
+Hola, Claude. Tengo un proyecto en un solo archivo con aproximadamente 1,000 líneas de código que gestiona torneos y enfrentamientos para Halo 2. El sistema ya está funcionando correctamente, pero necesito refactorizarlo y extenderlo para incorporar nuevas funcionalidades en el perfil de jugador.
+
+Adjunto el archivo del proyecto para que lo revises e implementes las siguientes mejoras:
+
+1. Sistema de Estadísticas (Victorias y Derrotas) por Modalidad
+Necesito registrar y estructurar las métricas de desempeño de cada jugador, teniendo en cuenta lo siguiente:
+
+Métricas a rastrear por jugador:
+
+Partidas jugadas (Matches Played).
+
+Victorias de partidas (Matches Won).
+
+Derrotas de partidas (Matches Lost).
+
+Torneos jugados (Tournaments Played).
+
+Victorias de torneos (Tournaments Won).
+
+Segmentación por Modalidad: Las estadísticas (partidas jugadas, victorias, derrotas y torneos ganados) deben llevarse de forma totalmente independiente para cada modalidad de juego:
+
+4v4
+
+2v2
+
+1v1
+
+2. Rediseño y Mejora del Perfil Competitivo del Jugador
+Quiero reestructurar la visualización/estructura del perfil de jugador para que sea más clara, legible e informativa, integrando:
+
+Resumen de Estadísticas Competitivas: Presentación ordenada del desempeño general y por modalidad (4v4, 2v2, 1v1), calculando de forma clara el Win Rate / Porcentaje de victorias en cada una.
+
+Histórico Personalizado (Filtrado por Jugador): Actualmente existe una auditoría e historial global de llaves/brackets. Necesito adaptar ese histórico dentro del perfil del jugador para que sea exclusivo de sus propios datos, mostrando:
+
+Historial de partidas jugadas (con resultados de victoria/derrota, fechas y modalidades).
+
+Historial de torneos en los que ha participado y hasta qué fase/instancia llegó.
+
+Evolución de puntos / MMR / rendimiento a lo largo del tiempo.
+
+Instrucciones Adicionales:
+Revisa el código actual para mantener la consistencia con las estructuras de datos, clases o métodos existentes.
+
+Muestra los cambios o parches de código necesarios de manera clara, explicando dónde se integran las nuevas propiedades y funciones en el archivo.
+
+Asegúrate de que los cambios no rompan la lógica actual del sistema de enfrentamientos ni la generación de brackets.

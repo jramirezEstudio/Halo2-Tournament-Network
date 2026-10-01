@@ -1,0 +1,14 @@
+Actúa como un desarrollador Senior de Python y experto en UX/UI para Streamlit. 
+
+Quiero cambiar la barra de navegación de mi aplicación: actualmente está en la barra lateral (sidebar) y quiero que sea una barra de navegación HORIZONTAL en la parte SUPERIOR de la pantalla, con un diseño limpio, moderno tipo SaaS.
+
+Por favor, genera el código utilizando la librería `streamlit-option-menu` (no uses HTML/CSS inyectado con st.markdown). 
+
+Asegúrate de cumplir con los siguientes requisitos técnicos y de diseño:
+1. Usa `st.set_page_config(layout="wide")` al inicio.
+2. Configura el componente `option_menu` con el parámetro `orientation="horizontal"`.
+3. Incluye iconos modernos y minimalistas para cada opción usando Bootstrap Icons (por ejemplo: "house", "gear", "graph-up", etc.).
+4. Aplica un estilo personalizado (styles) dentro del componente para que los colores se sientan premium: un fondo sutil para la barra, texto limpio y un color de selección elegante que no sature la vista.
+5. Estructura el código con condicionales sencillos (if/elif) para renderizar el contenido de cada página según la opción seleccionada.
+
+Entrégame un código modular, limpio y listo para producción.

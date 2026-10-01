@@ -1,0 +1,172 @@
+Guía Técnica Completa: Motor de Balanceo, Puntos de Rango (PR) y Algoritmo de MMR DinámicoEsta documentación unifica todo el ecosistema de reglas, casos límite, ajustes individuales por rango, fórmulas matemáticas y parámetros de administración necesarios para implementar el sistema de Puntos de Rango (PR) y Clasificación por MMR en tu aplicativo para todas las modalidades (1v1, 2v2, 3v3, 4v4).1. Mapeo Continuo de Rangos, MMR y PRLos PR (Puntos de Rango) representan el acumulado continuo del jugador (no se reinician). Cada intervalo de $500\text{ PR}$ equivale a $0.50$ de MMR.$$\text{PR} = \text{MMR} \times 1000$$$$\text{MMR} = \text{Math.Floor}\left(\frac{\text{PR Actuales}}{\text{PR\_PER\_MMR\_STEP}}\right) \times 0.5$$Rango VisualMMR Fijo (Draft)PR Mínimo (Piso)PR Máximo (Techo)D1.001,000 PR1,499 PRD+1.501,500 PR1,999 PRC2.002,000 PR2,499 PRC+2.502,500 PR2,999 PRB3.003,000 PR3,499 PRB+3.503,500 PR3,999 PRA4.004,000 PR4,499 PRA+4.504,500 PR4,999 PRS5.005,000 PR5,499 PRS+5.505,500 PR5,999 PRS++6.006,000 PR6,499 PRS+++6.506,500 PR$\infty$2. Esquema de Configuración Dinámica (Panel de Administración)Permite ajustar los multiplicadores y topes por modalidad para equilibrar el impacto según el número de participantes.Objeto JSON de Configuración (ModalityRankConfig)JSON{
+  "configs": {
+    "4v4": {
+      "modality": "4v4",
+      "pr_per_mmr_step": 500,
+      "win_base_pr": 50,
+      "loss_base_pr": 40,
+      "sum_gap_multiplier": 3.0,
+      "max_pr_win": 100,
+      "min_pr_win": 15,
+      "max_pr_loss": 50,
+      "min_pr_loss": 10,
+      "low_rank_threshold": 2.0,
+      "low_rank_bonus": 10,
+      "high_rank_threshold": 5.0,
+      "high_rank_penalty": 10
+    },
+    "2v2": {
+      "modality": "2v2",
+      "pr_per_mmr_step": 500,
+      "win_base_pr": 50,
+      "loss_base_pr": 40,
+      "sum_gap_multiplier": 6.0,
+      "max_pr_win": 100,
+      "min_pr_win": 15,
+      "max_pr_loss": 50,
+      "min_pr_loss": 10,
+      "low_rank_threshold": 2.0,
+      "low_rank_bonus": 10,
+      "high_rank_threshold": 5.0,
+      "high_rank_penalty": 10
+    },
+    "1v1": {
+      "modality": "1v1",
+      "pr_per_mmr_step": 500,
+      "win_base_pr": 50,
+      "loss_base_pr": 40,
+      "sum_gap_multiplier": 10.0,
+      "max_pr_win": 100,
+      "min_pr_win": 15,
+      "max_pr_loss": 50,
+      "min_pr_loss": 10,
+      "low_rank_threshold": 2.0,
+      "low_rank_bonus": 10,
+      "high_rank_threshold": 5.0,
+      "high_rank_penalty": 10
+    }
+  }
+}
+3. Fórmulas Matemáticas y Lógica de Escenarios ExtremosEl motor se basa en la Diferencia de Suma ($\Delta$) entre el equipo ganador y el perdedor, agregando las bonificaciones y penalizaciones individuales según el rango del jugador dentro de la sala.$$\Delta = \text{Suma Equipo Ganador} - \text{Suma Equipo Perdedor}$$Lógica General de CálculoCálculo de PR Base por Victoria:$$\text{PR\_Victoria\_Calc} = \text{win\_base\_pr} - (\Delta \times \text{sum\_gap\_multiplier})$$$$\text{PR\_Victoria} = \text{Clamp}(\text{PR\_Victoria\_Calc}, \text{min\_pr\_win}, \text{max\_pr\_win})$$Cálculo de PR Base por Derrota:$$\text{PR\_Derrota\_Calc} = \text{loss\_base\_pr} + (\Delta \times \text{sum\_gap\_multiplier})$$$$\text{PR\_Derrota} = -\text{Clamp}(\text{PR\_Derrota\_Calc}, \text{min\_pr\_loss}, \text{max\_pr\_loss})$$Ajuste Individual por Rango (Se suma al resultado anterior):Si $\text{MMR\_Jugador} \le \text{low\_rank\_threshold}$ (ej. Jugador Rango D o C en sala alta) y gana:$$\text{PR\_Final} = \text{PR\_Victoria} + \text{low\_rank\_bonus}$$Si $\text{MMR\_Jugador} \ge \text{high\_rank\_threshold}$ (ej. Jugador Rango S) y gana:$$\text{PR\_Final} = \text{PR\_Victoria} - \text{high\_rank\_penalty}$$Explicación Metodológica de los Casos EspecialesEscenario A: Un equipo fuerte (S) le gana a un equipo débil (D) (Victoria Esperada)Comportamiento: La diferencia de suma $\Delta$ es muy alta y positiva.Resultado: La fórmula reduce los puntos ganados al mínimo configurado ($\text{min\_pr\_win} = +15\text{ PR}$).Perdedor (Equipo D): Pierde la cantidad mínima de puntos ($\text{min\_pr\_loss} = -10\text{ PR}$), evitando castigar a un equipo inferior por perder una partida desbalanceada.Escenario B: Un equipo débil (D) le gana a un equipo fuerte (S) (Hazaña / Upsell)Comportamiento: La diferencia de suma $\Delta$ es negativa (el ganador tenía menor suma total).Resultado: La resta $- (\Delta \times K)$ se convierte en suma, elevando la recompensa al tope máximo ($\text{max\_pr\_win} = +100\text{ PR}$).Perdedor (Equipo S): Es castigado con la pérdida máxima posible ($\text{max\_pr\_loss} = -50\text{ PR}$) por caer ante un equipo inferior.Escenario C: Un jugador Rango D está en un equipo Rango S y gananComportamiento: El equipo gana los PR correspondientes por el balance general de las sumas.Resultado para el Rango D: Al cumplir $\text{MMR} \le \text{low\_rank\_threshold}$, el sistema le otorga el Bono de Rango Bajo ($\text{low\_rank\_bonus} = +10\text{ PR}$). Si el equipo ganó $+50\text{ PR}$, el jugador D recibe $+60\text{ PR}$, ayudándolo a subir más rápido hacia el nivel de la sala.Escenario D: Un jugador Rango S está en un equipo Rango D y pierdenComportamiento: Si el equipo pierde por contar con menor suma total, la pérdida de PR se mitiga gracias a la brecha.Resultado para el Rango S: Al ganar se le aplica un ajuste ($\text{high\_rank\_penalty} = -10\text{ PR}$) para no inflar artificialmente el tope alto, pero si pierde en un equipo débil, la pérdida se mantiene baja para no castigarlo injustamente por el rendimiento global del equipo.4. Código Completo del Backend (TypeScript)TypeScriptinterface ModalityRankConfig {
+  modality: string;
+  pr_per_mmr_step: number;
+  win_base_pr: number;
+  loss_base_pr: number;
+  sum_gap_multiplier: number;
+  max_pr_win: number;
+  min_pr_win: number;
+  max_pr_loss: number;
+  min_pr_loss: number;
+  low_rank_threshold: number;
+  low_rank_bonus: number;
+  high_rank_threshold: number;
+  high_rank_penalty: number;
+}
+
+interface Player {
+  id: string;
+  mmr: number;
+  pr: number;
+  rank: string;
+}
+
+interface MatchResultOutput {
+  newPR: number;
+  newMMR: number;
+  newRank: string;
+  prDelta: number;
+}
+
+function processMatchResult(
+  player: Player,
+  playerTeamSum: number,
+  enemyTeamSum: number,
+  isWinner: boolean,
+  config: ModalityRankConfig
+): MatchResultOutput {
+
+  // 1. Calcular brecha de suma
+  const gap = isWinner 
+    ? (playerTeamSum - enemyTeamSum) 
+    : (enemyTeamSum - playerTeamSum);
+
+  let prChange = 0;
+
+  if (isWinner) {
+    // 2. Calculo base por victoria (A menor suma del ganador frente al perdedor, mayor es el premio)
+    const calculatedWin = config.win_base_pr - (gap * config.sum_gap_multiplier);
+    
+    // Aplicar límites Min/Max
+    prChange = Math.max(config.min_pr_win, Math.min(config.max_pr_win, calculatedWin));
+
+    // 3. Ajustes individuales por rango del jugador
+    if (player.mmr <= config.low_rank_threshold) {
+      prChange += config.low_rank_bonus; // Caso C: Jugador D suma bono por ganar en sala alta
+    } else if (player.mmr >= config.high_rank_threshold) {
+      prChange -= config.high_rank_penalty; // Caso D: Control de inflación para rangos S
+    }
+  } else {
+    // 4. Calculo base por derrota
+    const calculatedLoss = config.loss_base_pr + (gap * config.sum_gap_multiplier);
+    
+    // Aplicar límites Min/Max y convertir a negativo
+    prChange = -Math.max(config.min_pr_loss, Math.min(config.max_pr_loss, calculatedLoss));
+  }
+
+  // 5. Actualizar Puntos Acumulados
+  const roundedDelta = Math.round(prChange);
+  const newPR = Math.max(0, player.pr + roundedDelta);
+
+  // 6. Recalcular MMR y Rango dinámicamente
+  const newMMR = Math.floor(newPR / config.pr_per_mmr_step) * 0.5;
+  const newRank = getRankNameFromMMR(newMMR);
+
+  return {
+    newPR,
+    newMMR,
+    newRank,
+    prDelta: roundedDelta
+  };
+}
+
+function getRankNameFromMMR(mmr: number): string {
+  if (mmr <= 1.0) return "D";
+  if (mmr === 1.5) return "D+";
+  if (mmr === 2.0) return "C";
+  if (mmr === 2.5) return "C+";
+  if (mmr === 3.0) return "B";
+  if (mmr === 3.5) return "B+";
+  if (mmr === 4.0) return "A";
+  if (mmr === 4.5) return "A+";
+  if (mmr === 5.0) return "S";
+  if (mmr === 5.5) return "S+";
+  if (mmr === 6.0) return "S++";
+  return "S+++";
+}
+5. Estructura de Persistencia en Base de DatosCada jugador debe almacenar sus estadísticas por modalidad de manera independiente para no mezclar el desempeño entre partidas 1v1, 2v2 y 4v4.JSON{
+  "player_id": "usr-8821",
+  "username": "Spartan117",
+  "modalities": {
+    "4v4": {
+      "rank": "B+",
+      "mmr": 3.5,
+      "pr": 3720,
+      "wins": 24,
+      "losses": 10
+    },
+    "2v2": {
+      "rank": "C+",
+      "mmr": 2.5,
+      "pr": 2810,
+      "wins": 12,
+      "losses": 8
+    },
+    "1v1": {
+      "rank": "D+",
+      "mmr": 1.5,
+      "pr": 1650,
+      "wins": 5,
+      "losses": 4
+    }
+  }
+}

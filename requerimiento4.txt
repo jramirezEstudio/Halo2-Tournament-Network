@@ -1,0 +1,127 @@
+# Requerimiento Técnico: Nueva Pestaña de "Auditoría & Novedades" para Módulo de Torneos
+
+Actualmente el aplicativo ya cuenta con una pestaña de "Histórico & Llaves" totalmente completa que muestra la información del torneo, equipos participantes, partidos totales/jugados, Upper Bracket, Lower Bracket y la Gran Final.
+
+Necesitamos **añadir una NUEVA pestaña independiente** (por ejemplo: **"Auditoría & Novedades"** o **"Bitácora de Torneo"**) dedicada al registro inmutable, traza de auditoría de MMR/PR y gestión de novedades (cambios de jugadores, sanciones y ajustes).
+
+---
+
+## 1. Alcance de la Nueva Pestaña ("Auditoría & Novedades")
+
+Esta pestaña debe consumir la información registrada en la base de datos a través de *snapshots* inmutables JSON para mostrar la traza exacta de lo sucedido en el torneo sin alterar ni depender de la pestaña de llaves existente.
+
+### A. Línea de Tiempo de Eventos (Timeline Feed)
+Un registro cronológico (del más reciente al más antiguo) que consolide:
+1. **Inicio de Partidas:** Evento grabado al pasar un juego a "En Progreso".
+   - Muestra alineación inicial de ambos equipos con sus MMR/PR y Rango individual y la suma global en ese instante.
+2. **Registro de Resultados & Variación de Rango:** Evento grabado al finalizar una partida.
+   - Marcador final.
+   - Desglose por jugador: PR previo, delta de PR (+/-), PR final, MMR previo, MMR final, rango actual y bonos/mitigaciones aplicados.
+   - Usuario / Juez que registró el marcador.
+3. **Novedades de Jugadores (Sustituciones / Ringers):**
+   - "El jugador [X] ingresó en reemplazo de [Y] en el Equipo [Z]".
+   - Motivo registrado (Desconexión, Abandono, etc.) y hora exacta.
+   - Métricas de entrada (MMR/PR) del jugador sustituto.
+4. **Reversiones y Ajustes de Administrador (Rollbacks):**
+   - Si un administrador corrigió un marcador o hizo un ajuste manual de puntos, se muestra el motivo, el admin responsable y la diferencia corregida.
+
+### B. Filtros de Auditoría
+Para facilitar la navegación en torneos grandes, la pestaña debe incluir filtros simples en la parte superior:
+- **Filtrar por Equipo:** Ver solo eventos/partidas de un equipo específico.
+- **Filtrar por Jugador:** Buscar la traza completa de puntos (PR/MMR) ganados/perdidos por un usuario a lo largo del torneo.
+- **Filtrar por Tipo de Evento:** `Todos`, `Resultados de Partidas`, `Sustituciones / Novedades`, `Ajustes Admin`.
+
+---
+
+## 2. Modelo de Datos y Snapshots (Backend)
+
+Para soportar esta pestaña, implementaremos/adaptaremos las siguientes tablas e instructivos de guardado de datos en JSON:
+
+### A. Tablas Relacionales
+
+```sql
+-- Tabla de Enfrentamientos (extender o adaptar existente)
+ALTER TABLE Matches ADD
+    RegisteredByUserId UNIQUEIDENTIFIER NULL,
+    InitialMatchSnapshot NVARCHAR(MAX) NULL, -- JSON con foto al dar "Iniciar Partida"
+    FinalResultSnapshot NVARCHAR(MAX) NULL;  -- JSON con foto al dar "Registrar Victoria"
+
+-- Tabla de Novedades y Sustituciones
+CREATE TABLE PlayerSubstitutions (
+    SubstitutionId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    MatchId UNIQUEIDENTIFIER NOT NULL,
+    TeamId UNIQUEIDENTIFIER NOT NULL,
+    PlayerOutId UNIQUEIDENTIFIER NOT NULL,
+    PlayerInId UNIQUEIDENTIFIER NOT NULL,
+    Reason VARCHAR(250) NOT NULL,
+    SubstitutedAt DATETIME2 NOT NULL,
+    PlayerInSnapshot NVARCHAR(MAX) NOT NULL -- MMR/PR del jugador al entrar
+);
+
+-- Tabla de Registro de Reversiones/Ajustes
+CREATE TABLE MatchRollbacks (
+    RollbackId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    MatchId UNIQUEIDENTIFIER NOT NULL,
+    AdminUserId UNIQUEIDENTIFIER NOT NULL,
+    Reason VARCHAR(500) NOT NULL,
+    ExecutedAt DATETIME2 NOT NULL,
+    PreviousSnapshot NVARCHAR(MAX) NOT NULL
+);
+
+. Estructura de los JSON de Auditoría
+InitialMatchSnapshot (Se guarda al iniciar la partida):
+
+JSON
+{
+  "matchId": "m-9876",
+  "startedAt": "2026-10-15T14:30:00Z",
+  "configSnapshot": { "kFactor": 10.0, "baseWinPoints": 25, "maxPRDelta": 100, "minPRDelta": 15 },
+  "teams": {
+    "teamA": {
+      "teamId": "t-01", "name": "Slayers", "totalMMR": 14.5,
+      "roster": [
+        { "playerId": "p-101", "gamertag": "MasterChief", "mmrBefore": 4.5, "prBefore": 4500, "rankBefore": "S", "isRinger": false },
+        { "playerId": "p-102", "gamertag": "Arbiter", "mmrBefore": 3.0, "prBefore": 3000, "rankBefore": "B", "isRinger": false }
+      ]
+    },
+    "teamB": {
+      "teamId": "t-02", "name": "Covenant", "totalMMR": 11.0,
+      "roster": [
+        { "playerId": "p-201", "gamertag": "Tartarus", "mmrBefore": 2.5, "prBefore": 2500, "rankBefore": "C+", "isRinger": false },
+        { "playerId": "p-202", "gamertag": "Atriox", "mmrBefore": 3.0, "prBefore": 3000, "rankBefore": "B", "isRinger": false }
+      ]
+    }
+  }
+}
+FinalResultSnapshot (Se guarda al cerrar la partida):
+
+JSON
+{
+  "matchId": "m-9876",
+  "completedAt": "2026-10-15T14:52:10Z",
+  "winnerTeamId": "t-01",
+  "score": "2 - 0",
+  "registeredBy": "usr-admin-01",
+  "playerResults": [
+    {
+      "playerId": "p-101", "gamertag": "MasterChief",
+      "prBefore": 4500, "prChange": 18, "prAfter": 4518,
+      "mmrBefore": 4.5, "mmrAfter": 4.52,
+      "rankBefore": "S", "rankAfter": "S",
+      "appliedBonuses": ["ExpectedWinBase"]
+    },
+    {
+      "playerId": "p-201", "gamertag": "Tartarus",
+      "prBefore": 2500, "prChange": -18, "prAfter": 2482,
+      "mmrBefore": 2.5, "mmrAfter": 2.48,
+      "rankBefore": "C+", "rankAfter": "C+",
+      "appliedBonuses": ["LossMitigationByRankGap"]
+    }
+  ]
+}
+
+Frontend:
+
+Crear el nuevo componente de pestaña "Auditoría & Novedades" junto a la pestaña actual de "Histórico & Llaves".
+
+Maquetar el Timeline Feed interactivo con tarjetas descriptivas por evento y soporte para los filtros por jugador/equipo.
